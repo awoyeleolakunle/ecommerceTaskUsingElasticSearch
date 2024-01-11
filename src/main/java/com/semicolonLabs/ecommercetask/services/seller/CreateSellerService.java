@@ -34,11 +34,11 @@ public class CreateSellerService {
     }
 
 
-
     private void buildSeller(SellerAccountCreationRequest sellerAccountCreationRequest){
         Seller seller = modelMapper.map(sellerAccountCreationRequest, Seller.class);
         var savedSeller =  sellerService.saveSeller(seller);
         System.out.println("I'm the saved seller email address : " + savedSeller.getEmailAddress());
-        System.out.println("I'm the saved seller : " + savedSeller);;
+        System.out.println("I'm the saved seller : " + savedSeller);
     }
+
 }
