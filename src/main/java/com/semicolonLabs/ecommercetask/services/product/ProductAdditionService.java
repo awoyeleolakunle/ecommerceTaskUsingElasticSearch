@@ -4,7 +4,6 @@ package com.semicolonLabs.ecommercetask.services.product;
 import com.semicolonLabs.ecommercetask.data.models.Product;
 import com.semicolonLabs.ecommercetask.data.models.Seller;
 import com.semicolonLabs.ecommercetask.data.models.Store;
-import com.semicolonLabs.ecommercetask.data.models.enums.ProductCategory;
 import com.semicolonLabs.ecommercetask.dtos.request.ProductAdditionRequest;
 import com.semicolonLabs.ecommercetask.exceptions.ProductException;
 import com.semicolonLabs.ecommercetask.exceptions.SellerException;
@@ -14,15 +13,11 @@ import com.semicolonLabs.ecommercetask.services.store.StoreService;
 import com.semicolonLabs.ecommercetask.utils.ApiResponse;
 import com.semicolonLabs.ecommercetask.utils.GenerateApiResponse;
 import lombok.AllArgsConstructor;
-import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
+
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -44,7 +39,7 @@ public class ProductAdditionService {
         Store store = foundSeller.get().getStore();
         if(store==null) throw new StoreException(GenerateApiResponse.STORE_NOT_FOUND);
 
-        Product savedProduct = addNewProductToSellerStore(productAdditionRequest);
+        Product savedProduct = addNewProductToSellerStore( foundSeller.get(), productAdditionRequest);
         Store updatedStoreWithNewProduct = addProductToSellerStore(store, savedProduct);
 
         updateSellerStore(foundSeller.get(), updatedStoreWithNewProduct);
@@ -68,12 +63,10 @@ public class ProductAdditionService {
         return storeService.save(store);
     }
 
-    private Product addNewProductToSellerStore(ProductAdditionRequest productAdditionRequest)  throws ProductException {
-        System.out.println(productAdditionRequest.getProductName());
-        System.out.println(productAdditionRequest.getSellerEmailAddress());
-        Optional<Product> foundProduct = productService.findProductByName(productAdditionRequest.getProductName());
-        System.out.println(foundProduct);
-        if (foundProduct.isPresent()) throw new ProductException(GenerateApiResponse.PRODUCT_ALREADY_ADDED);
+    private Product addNewProductToSellerStore(Seller seller, ProductAdditionRequest productAdditionRequest)  throws ProductException {
+
+        List<Product> listOfExistingProducts  =  seller.getStore().getSetOfProducts().stream().filter(product -> product.getProductName().equalsIgnoreCase(productAdditionRequest.getProductName())).toList();
+        if(!listOfExistingProducts.isEmpty()) throw new ProductException(GenerateApiResponse.PRODUCT_ALREADY_ADDED);
         Product product = new Product();
         product.setProductName(productAdditionRequest.getProductName());
         product.setProductCategory(productAdditionRequest.getProductCategory().toUpperCase());
